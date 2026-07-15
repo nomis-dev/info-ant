@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <!-- 触角：向外延伸寻找数据 -->
+  <path d="M 44 42 Q 32 25 22 25" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 56 42 Q 68 25 78 25" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+  
+  <!-- 数据节点 (蓝色信息点) -->
+  <circle cx="22" cy="25" r="4.5" fill="#3b82f6" />
+  <circle cx="78" cy="25" r="4.5" fill="#3b82f6" />
+  
+  <!-- 提取器核心 / 蚂蚁头部 (整体微调缩小) -->
+  <circle cx="50" cy="50" r="12" fill="#1e293b" />
+  
+  <!-- 左侧代码括号 '<' -->
+  <!-- 保持了与头部明显的留白距离，体积改小 -->
+  <path d="M 28 42 L 18 50 L 28 58" fill="none" stroke="#1e293b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- 右侧代码括号 '>' -->
+  <!-- 保持了与头部明显的留白距离，体积改小 -->
+  <path d="M 72 42 L 82 50 L 72 58" fill="none" stroke="#1e293b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

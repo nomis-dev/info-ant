@@ -9,6 +9,7 @@ design-system brief, **without a headless browser**.
 | Package | Description |
 |---|---|
 | [`@info-ant/color-extractor`](./packages/color-extractor) | Extract a site's color palette, semantic tokens, and a `design.md` brief from HTML + a representative image. Ships a library API, a Fetch-standard route handler, and a CLI. Tree-shakeable ESM. |
+| [`@info-ant/logo-extractor`](./packages/logo-extractor) | Discover a site's brand logo and favicon **links** (header logos, `apple-touch-icon`, web-manifest icons, `/favicon.ico`) — no browser, no image download. Library API + Fetch handler + CLI. Tree-shakeable ESM. |
 
 ## Quick start
 
