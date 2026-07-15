@@ -12,10 +12,10 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./lib",
+    "rootDir": ".",
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["lib/**/*.ts"],
-  "exclude": ["node_modules", "dist", "test", "scripts"]
+  "include": ["src/**/*.ts", "color/lib/**/*.ts", "logo/lib/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/test", "**/scripts"]
 }

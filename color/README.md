@@ -1,4 +1,4 @@
-# @info-ant/color-extractor
+# info-ant/color
 
 Extract a website's color palette and design tokens **without a headless
 browser**. It fetches the page HTML and a representative image, then derives
@@ -14,7 +14,7 @@ into a Next.js app, an Express server, a script, or use the CLI.
 ## Install
 
 ```bash
-npm install @info-ant/color-extractor
+npm install info-ant
 ```
 
 Requires Node 18.17+. `sharp` (a native module, pulled in by `node-vibrant`)
@@ -23,7 +23,7 @@ means this must run on a **Node runtime** — not an edge/browser runtime.
 ## Library usage
 
 ```ts
-import { extractColors } from '@info-ant/color-extractor';
+import { extractColors } from 'info-ant/color';
 
 const result = await extractColors('https://stripe.com');
 console.log(result.primary, result.source);
@@ -49,7 +49,7 @@ console.log(result.primary, result.source);
 ### Design tokens / design.md
 
 ```ts
-import { extractDesign } from '@info-ant/color-extractor';
+import { extractDesign } from 'info-ant/color';
 
 const { tokens, markdown } = await extractDesign('https://stripe.com');
 // tokens: semantic roles (background, text, primary, header/footer/button...)
@@ -64,7 +64,7 @@ use — so no `next` import is needed:
 
 ```ts
 // app/api/colors/route.ts
-import { createColorHandler } from '@info-ant/color-extractor/handler';
+import { createColorHandler } from 'info-ant/color/handler';
 
 // sharp is a native module -> must run on the Node runtime, not Edge.
 export const runtime = 'nodejs';
@@ -82,7 +82,7 @@ GET /api/colors?url=https://stripe.com
 Need custom behavior? Use the transport-free core:
 
 ```ts
-import { extractColorsResponse } from '@info-ant/color-extractor/handler';
+import { extractColorsResponse } from 'info-ant/color/handler';
 
 const { status, body } = await extractColorsResponse(targetUrl);
 ```
@@ -90,13 +90,13 @@ const { status, body } = await extractColorsResponse(targetUrl);
 ## CLI
 
 ```bash
-npx @info-ant/color-extractor https://stripe.com             # print ExtractResult JSON
-npx @info-ant/color-extractor https://stripe.com --design     # print a design.md brief
-npx @info-ant/color-extractor https://stripe.com -d -o out.md # write the brief to a file
+npx --package=info-ant colorextractor https://stripe.com             # print ExtractResult JSON
+npx --package=info-ant colorextractor https://stripe.com --design     # print a design.md brief
+npx --package=info-ant colorextractor https://stripe.com -d -o out.md # write the brief to a file
 ```
 
-> Installed the package? The `colorextractor` bin is on your `PATH`, so you can
-> drop the scope: `colorextractor https://stripe.com`.
+> Installed the package? The `colorextractor` bin is on your `PATH`:
+> `colorextractor https://stripe.com`.
 
 ## Security (SSRF)
 
@@ -124,8 +124,7 @@ Because the target URL is user-supplied, every outbound fetch is guarded:
 
 ```bash
 npm install
-npm run build   # emit dist/ (JS + .d.ts)
-npm test        # hermetic unit tests (no network) via node:test + tsx
-npm run smoke   # live end-to-end check against real sites
-npm run smoke -- https://your-site.com
+npm run build        # emit dist/ (JS + .d.ts)
+npm run test:color   # hermetic unit tests (no network) via node:test + tsx
+npm run smoke:color  # live end-to-end check against real sites
 ```

@@ -1,4 +1,4 @@
-# @info-ant/logo-extractor
+# info-ant/logo
 
 Discover a website's **brand logo and favicon links** — without a headless
 browser and **without downloading the images**. It fetches the page HTML, reads
@@ -7,7 +7,7 @@ URLs.
 
 Pure Node (fetch + cheerio). No framework dependency, no native image codecs —
 drop it into a Next.js app, an Express server, a script, or use the CLI. Sibling
-package to [`@info-ant/color-extractor`](../color-extractor).
+toolkit to [`info-ant/color`](../color).
 
 ## What it finds
 
@@ -23,7 +23,7 @@ own brand (a customer logo in a showcase loses to the real header mark).
 ### Inline SVG logos
 
 Many sites (Stripe, GitHub, …) render their header logo as an **inline
-`<svg>`** — there's no image URL to link to. For those, `logo-extractor` reads
+`<svg>`** — there's no image URL to link to. For those, `info-ant/logo` reads
 the SVG graphics straight out of the HTML and returns them in two forms on the
 candidate:
 
@@ -44,7 +44,7 @@ pulling in illustration or sprite sheets.
 ## Install
 
 ```bash
-npm install @info-ant/logo-extractor
+npm install info-ant
 ```
 
 Requires Node 18.17+. No native modules — runs anywhere Node's `fetch` exists
@@ -53,7 +53,7 @@ Requires Node 18.17+. No native modules — runs anywhere Node's `fetch` exists
 ## Library usage
 
 ```ts
-import { extractLogos } from '@info-ant/logo-extractor';
+import { extractLogos } from 'info-ant/logo';
 
 const result = await extractLogos('https://vercel.com');
 console.log(result.logo);    // best header-logo link (or null)
@@ -84,7 +84,7 @@ console.log(result.favicon); // best favicon link
 ### Pure parsing (no network)
 
 ```ts
-import { parseHtmlLogos } from '@info-ant/logo-extractor';
+import { parseHtmlLogos } from 'info-ant/logo';
 
 const { logos, favicons, manifestUrls } = parseHtmlLogos(html, 'https://acme.com');
 ```
@@ -96,7 +96,7 @@ which is exactly what Next.js App Router route handlers use — no `next` import
 
 ```ts
 // app/api/logo/route.ts
-import { createLogoHandler } from '@info-ant/logo-extractor/handler';
+import { createLogoHandler } from 'info-ant/logo/handler';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -113,7 +113,7 @@ GET /api/logo?url=https://vercel.com
 Need custom behavior? Use the transport-free core:
 
 ```ts
-import { extractLogosResponse } from '@info-ant/logo-extractor/handler';
+import { extractLogosResponse } from 'info-ant/logo/handler';
 
 const { status, body } = await extractLogosResponse(targetUrl);
 ```
@@ -121,14 +121,14 @@ const { status, body } = await extractLogosResponse(targetUrl);
 ## CLI
 
 ```bash
-npx @info-ant/logo-extractor https://vercel.com            # full JSON
-npx @info-ant/logo-extractor https://vercel.com --logo     # best logo link only
-npx @info-ant/logo-extractor https://vercel.com --favicon  # best favicon link only
-npx @info-ant/logo-extractor https://vercel.com -o out.json
+npx --package=info-ant logoextractor https://vercel.com            # full JSON
+npx --package=info-ant logoextractor https://vercel.com --logo     # best logo link only
+npx --package=info-ant logoextractor https://vercel.com --favicon  # best favicon link only
+npx --package=info-ant logoextractor https://vercel.com -o out.json
 ```
 
-> After install the `logoextractor` bin is on your `PATH`, so you can drop the
-> scope: `logoextractor https://vercel.com --favicon`.
+> After install the `logoextractor` bin is on your `PATH`:
+> `logoextractor https://vercel.com --favicon`.
 
 ## Security (SSRF)
 
@@ -154,8 +154,7 @@ Because the target URL is user-supplied, every outbound fetch is guarded:
 
 ```bash
 npm install
-npm run build   # emit dist/ (JS + .d.ts)
-npm test        # hermetic unit tests (no network) via node:test + tsx
-npm run smoke   # live end-to-end check against real sites
-npm run smoke -- https://your-site.com
+npm run build       # emit dist/ (JS + .d.ts)
+npm run test:logo   # hermetic unit tests (no network) via node:test + tsx
+npm run smoke:logo  # live end-to-end check against real sites
 ```

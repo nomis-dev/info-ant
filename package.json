@@ -1,24 +1,92 @@
 {
   "name": "info-ant",
   "version": "1.0.0",
-  "private": true,
-  "packageManager": "npm@11.8.0",
-  "description": "Info-Ant monorepo — color extraction and design token tooling.",
+  "description": "Extract a website's colors, design tokens, brand logo and favicon without a headless browser. Pure Node, drops into any Next.js app or runs standalone.",
   "license": "MIT",
   "type": "module",
-  "workspaces": [
-    "packages/*"
+  "packageManager": "npm@11.8.0",
+  "keywords": [
+    "color",
+    "palette",
+    "design-tokens",
+    "theme-color",
+    "logo",
+    "favicon",
+    "brand",
+    "og-image",
+    "nextjs",
+    "ssrf"
   ],
   "engines": {
     "node": ">=18.17"
   },
+  "main": "./dist/src/index.js",
+  "module": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "sideEffects": [
+    "./dist/color/lib/cli.js",
+    "./dist/logo/lib/cli.js"
+  ],
+  "bin": {
+    "colorextractor": "./dist/color/lib/cli.js",
+    "logoextractor": "./dist/logo/lib/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./color": {
+      "types": "./dist/color/lib/index.d.ts",
+      "import": "./dist/color/lib/index.js",
+      "default": "./dist/color/lib/index.js"
+    },
+    "./color/handler": {
+      "types": "./dist/color/lib/handler.d.ts",
+      "import": "./dist/color/lib/handler.js",
+      "default": "./dist/color/lib/handler.js"
+    },
+    "./logo": {
+      "types": "./dist/logo/lib/index.d.ts",
+      "import": "./dist/logo/lib/index.js",
+      "default": "./dist/logo/lib/index.js"
+    },
+    "./logo/handler": {
+      "types": "./dist/logo/lib/handler.d.ts",
+      "import": "./dist/logo/lib/handler.js",
+      "default": "./dist/logo/lib/handler.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "color/README.md",
+    "logo/README.md"
+  ],
   "scripts": {
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "typecheck": "turbo run typecheck"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "test": "node --import tsx --test color/test/*.test.ts logo/test/*.test.ts",
+    "test:color": "node --import tsx --test color/test/*.test.ts",
+    "test:logo": "node --import tsx --test logo/test/*.test.ts",
+    "smoke:color": "node --import tsx color/scripts/smoke.ts",
+    "smoke:logo": "node --import tsx logo/scripts/smoke.ts",
+    "design": "node --import tsx color/scripts/design.ts",
+    "try": "node --import tsx logo/scripts/try.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "node-vibrant": "^4.0.3",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
-    "turbo": "^2.3.0"
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
   }
 }
