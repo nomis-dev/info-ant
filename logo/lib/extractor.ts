@@ -56,6 +56,30 @@ async function fetchTextCapped(
   }
 }
 
+// Matches a CSS custom-property reference, e.g. `var(--brand-color)`. Inline-svg
+// / css-bg-svg logos are data: URIs that embed the markup verbatim; if that
+// markup styles itself with `var(--…)` it depends on the page's stylesheet,
+// which the extracted URI no longer carries — so it renders blank in isolation.
+const CSS_VAR_REF = /var\(\s*--/i;
+
+// Guard for the single best-logo guess. A real http(s) URL is always usable.
+// A non-URL logo (a data: URI built from inline SVG) is rejected when its
+// content references CSS variables, since it can't render on its own.
+function isUsableSingleLogo(candidate: LogoCandidate): boolean {
+  if (/^https?:\/\//i.test(candidate.url)) return true;
+  // Prefer the raw SVG markup; fall back to the (percent-encoded) data URI,
+  // decoding it so an encoded `var(--…)` is still caught.
+  let content = candidate.svg;
+  if (!content) {
+    try {
+      content = decodeURIComponent(candidate.url);
+    } catch {
+      content = candidate.url;
+    }
+  }
+  return !CSS_VAR_REF.test(content);
+}
+
 type ManifestIcon = { src?: string; sizes?: string; type?: string };
 type Manifest = { icons?: ManifestIcon[] };
 
@@ -125,9 +149,11 @@ export async function extractLogos(rawUrl: string, deps: Deps = {}): Promise<Log
 
   const rankedFavicons = rankFavicons(favicons);
 
+  const bestLogo = parsed.logos[0] ?? null;
+
   return {
     url: url.href,
-    logo: parsed.logos[0]?.url ?? null,
+    logo: bestLogo && isUsableSingleLogo(bestLogo) ? bestLogo.url : null,
     favicon: rankedFavicons[0]?.url ?? null,
     logos: parsed.logos,
     favicons: rankedFavicons,

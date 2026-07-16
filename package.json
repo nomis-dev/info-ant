@@ -1,6 +1,6 @@
 {
   "name": "info-ant",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extract a website's colors, design tokens, brand logo and favicon without a headless browser. Pure Node, drops into any Next.js app or runs standalone.",
   "license": "MIT",
   "type": "module",
@@ -71,6 +71,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build && npm test",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "publish:npm": "changeset publish",
+    "release": "npm run clean && npm run build && npm test && changeset publish",
     "test": "node --import tsx --test color/test/*.test.ts logo/test/*.test.ts",
     "test:color": "node --import tsx --test color/test/*.test.ts",
     "test:logo": "node --import tsx --test logo/test/*.test.ts",
@@ -85,6 +89,8 @@
     "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.0",
+    "@changesets/cli": "^2.27.0",
     "@types/node": "^22.10.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"

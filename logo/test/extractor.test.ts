@@ -60,6 +60,42 @@ test('extractLogos always synthesizes /favicon.ico fallback', async () => {
   assert.equal(result.logo, null);
 });
 
+test('extractLogos rejects an inline-svg logo that depends on CSS variables', async () => {
+  // Inline header SVG that styles its fill with a page-level CSS variable — the
+  // extracted data: URI can't resolve it, so `logo` must be null even though the
+  // candidate still appears in the full `logos` list.
+  const html = `
+    <html><body>
+      <header><a href="/" aria-label="Home">
+        <svg viewBox="0 0 10 10"><rect width="10" height="10" fill="var(--brand)"/></svg>
+      </a></header>
+    </body></html>`;
+
+  const result = await extractLogos('https://acme.test', {
+    fetchImpl: routedFetch({ 'acme.test': html }),
+    resolver: publicResolver,
+  });
+
+  assert.equal(result.logo, null);
+  assert.ok(result.logos.some((l) => l.source === 'inline-svg'));
+});
+
+test('extractLogos keeps an inline-svg logo with no CSS variables', async () => {
+  const html = `
+    <html><body>
+      <header><a href="/" aria-label="Home">
+        <svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#f00"/></svg>
+      </a></header>
+    </body></html>`;
+
+  const result = await extractLogos('https://acme.test', {
+    fetchImpl: routedFetch({ 'acme.test': html }),
+    resolver: publicResolver,
+  });
+
+  assert.ok(result.logo?.startsWith('data:image/svg+xml,'));
+});
+
 test('extractLogos rejects private-resolving hosts before fetching', async () => {
   let fetched = false;
   const spyFetch = (async () => {
