@@ -55,3 +55,29 @@ test('extractSemanticColors buckets colors by selector role', () => {
   assert.equal(s.background, '#0d1117');
   assert.equal(s.text, '#e6edf3');
 });
+
+test('extractSemanticColors reads brand tokens from component-scoped (non :root) rules', () => {
+  // SPA / CSS-Modules builds (e.g. UmiJS) declare design tokens on hashed
+  // component classes like `.root___12PKk`, not on :root. The brand color must
+  // still be picked up from there — otherwise extraction falls back to guessing
+  // from a favicon and returns an unrelated color (the haici.com regression).
+  const css = `
+    body { background: #ffffff; color: #000000; }
+    .root___12PKk {
+      --color-primary: #3eceb6;
+      --color-accent-yellow: #ffb040;
+      --color-accent-blue: #38c7ff;
+      --color-accent-sky: #22a6f3;
+    }
+    /* framework noise must NOT hijack the page background */
+    .tip { --antd-arrow-background-color: linear-gradient(to right, rgba(0,0,0,0.65), rgba(0,0,0,0.75)); }
+  `;
+  const s = extractSemanticColors(css);
+  assert.equal(s.primary, '#3eceb6');
+  assert.equal(s.accent, '#ffb040'); // first candidate (CSS-only best guess)
+  // All accent hues are collected so the design layer can reconcile them
+  // against the favicon palette.
+  assert.deepEqual(s.accentCandidates, ['#ffb040', '#38c7ff', '#22a6f3']);
+  // Structural roles ignore component-scoped vars, so the body background wins.
+  assert.equal(s.background, '#ffffff');
+});

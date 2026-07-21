@@ -65,8 +65,7 @@ export function isLight(hex: string): boolean {
 /**
  * Scan arbitrary text (HTML / inline CSS) for hex and rgb() colors and return
  * them ranked by frequency. Pure — used as the CSS-fallback source.
- */
-export function extractColorsFromText(text: string, limit = 8): string[] {
+ */export function extractColorsFromText(text: string, limit = 8): string[] {
   const counts = new Map<string, number>();
   const bump = (hex: string) => {
     const n = normalizeHex(hex);
@@ -89,4 +88,42 @@ export function extractColorsFromText(text: string, limit = 8): string[] {
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([hex]) => hex);
+}
+
+// Squared Euclidean distance in RGB space (0 = identical). Cheap and adequate
+// for "are these two brand colors roughly the same hue" comparisons; we skip
+// the sqrt since we only ever compare distances against each other.
+export function colorDistance(a: string, b: string): number {
+  const x = hexToRgb(a);
+  const y = hexToRgb(b);
+  if (!x || !y) return Infinity;
+  return (x.r - y.r) ** 2 + (x.g - y.g) ** 2 + (x.b - y.b) ** 2;
+}
+
+/**
+ * From a list of candidate colors, return the one closest to ANY color in the
+ * reference set, provided the closest match is within `maxDistance`. Returns
+ * null when no candidate is close enough (caller decides the fallback).
+ *
+ * `maxDistance` is a squared-RGB threshold; the default (~90 per channel)
+ * accepts clearly-related hues while rejecting an unrelated accent (e.g. a
+ * yellow token when the icon palette is entirely teal/blue).
+ */
+export function nearestColor(
+  candidates: string[],
+  reference: string[],
+  maxDistance = 90 * 90 * 3,
+): string | null {
+  let best: string | null = null;
+  let bestDist = Infinity;
+  for (const c of candidates) {
+    for (const r of reference) {
+      const d = colorDistance(c, r);
+      if (d < bestDist) {
+        bestDist = d;
+        best = c;
+      }
+    }
+  }
+  return best !== null && bestDist <= maxDistance ? best : null;
 }

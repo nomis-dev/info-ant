@@ -6,6 +6,8 @@ import {
   rgbToHex,
   isLight,
   extractColorsFromText,
+  colorDistance,
+  nearestColor,
 } from '../lib/color.js';
 
 test('normalizeHex expands shorthand and lowercases', () => {
@@ -49,4 +51,23 @@ test('extractColorsFromText ranks by frequency and skips b/w', () => {
   assert.ok(colors.includes('#00ff00'));
   assert.ok(!colors.includes('#000000'));
   assert.ok(!colors.includes('#ffffff'));
+});
+
+test('colorDistance is zero for identical colors and grows with difference', () => {
+  assert.equal(colorDistance('#000000', '#000000'), 0);
+  assert.ok(colorDistance('#000000', '#010101') < colorDistance('#000000', '#0f0f0f'));
+  assert.equal(colorDistance('#zzz', '#000000'), Infinity); // invalid input
+});
+
+test('nearestColor picks the accent candidate that matches the icon palette', () => {
+  // haici.com regression: CSS declares yellow/blue/sky accent vars, but only
+  // the blues appear in the (teal/blue) favicon — the yellow must be rejected.
+  const candidates = ['#ffb040', '#38c7ff', '#22a6f3'];
+  const iconPalette = ['#04b8fc', '#3ce4cc', '#015f83', '#016e97'];
+  assert.equal(nearestColor(candidates, iconPalette), '#22a6f3');
+});
+
+test('nearestColor returns null when no candidate is close enough', () => {
+  // A lone yellow accent against an all-teal icon palette is unrelated.
+  assert.equal(nearestColor(['#ffb040'], ['#04b8fc', '#3ce4cc']), null);
 });

@@ -18,6 +18,11 @@ export type SemanticColors = {
   border: string | null;
   muted: string | null;
   fonts: string[];
+  // All distinct colors from accent-named CSS vars, in declaration order. The
+  // design layer reconciles these against the favicon palette to pick the
+  // accent that actually appears in the brand mark; `accent` above is just the
+  // first candidate (CSS-only best guess).
+  accentCandidates: string[];
 };
 
 // Selector keyword matchers for each structural role.
@@ -53,12 +58,24 @@ function pickBest(votes: Map<string, number>): string | null {
 export function extractSemanticColors(css: string): SemanticColors {
   const rules = parseCssRules(css);
 
-  // 1. Build the custom-property map from :root / html / body rules first.
+  // 1. Build the custom-property map. Classic sites declare design tokens on
+  // :root / html / body, but SPA / CSS-Modules builds (e.g. UmiJS `.root___hash`)
+  // scope them to hashed component classes, so we harvest `--*` from ALL rules.
+  // On a name collision a global-selector declaration outranks a component one,
+  // so the page-level token wins over a locally overridden copy.
+  const isGlobalSel = (sel: string) => /(:root|html|body|^\*$|\[data-theme)/i.test(sel);
   const vars = new Map<string, string>();
+  const globalVars = new Set<string>();
   for (const rule of rules) {
-    if (!/(:root|html|body|^\*$|\[data-theme)/i.test(rule.selector)) continue;
+    const global = isGlobalSel(rule.selector);
     for (const [prop, value] of rule.decls) {
-      if (prop.startsWith('--')) vars.set(prop, value);
+      if (!prop.startsWith('--')) continue;
+      if (global) {
+        vars.set(prop, value);
+        globalVars.add(prop);
+      } else if (!globalVars.has(prop)) {
+        vars.set(prop, value);
+      }
     }
   }
 
@@ -99,12 +116,30 @@ export function extractSemanticColors(css: string): SemanticColors {
   }
 
   // 2. Seed tokens from named custom properties (strong signal when present).
+  // Structural roles have a robust selector-voting fallback (body/html rules)
+  // and are prone to false hits from component tokens (e.g. antd's
+  // `--antd-arrow-background-color`), so they only accept GLOBAL-scoped vars.
+  // Brand roles (primary/accent/muted) have no voting path, so they may be
+  // seeded from component-scoped vars too — that's how SPA design tokens surface.
+  const GLOBAL_ONLY: ReadonlySet<keyof SemanticColors> = new Set([
+    'background',
+    'surface',
+    'text',
+    'border',
+  ]);
   const fromVar: Partial<Record<keyof SemanticColors, string>> = {};
+  const accentCandidates: string[] = [];
   for (const [name, value] of vars) {
     for (const [re, token] of VAR_TOKEN) {
       if (re.test(name)) {
+        if (GLOBAL_ONLY.has(token) && !globalVars.has(name)) break;
         const hex = extractFirstColor(value, vars);
         if (hex && !fromVar[token]) fromVar[token] = hex;
+        // Keep every distinct accent hue so the design layer can reconcile
+        // them against the favicon palette instead of blindly taking the first.
+        if (hex && token === 'accent' && !accentCandidates.includes(hex)) {
+          accentCandidates.push(hex);
+        }
         break;
       }
     }
@@ -119,5 +154,6 @@ export function extractSemanticColors(css: string): SemanticColors {
     border: fromVar.border ?? pickBest(border),
     muted: fromVar.muted ?? null,
     fonts: [...fonts].slice(0, 4),
+    accentCandidates,
   };
 }

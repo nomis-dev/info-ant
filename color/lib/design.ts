@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { extractColors, fetchText, type ExtractResult } from './extractor.js';
 import { extractSemanticColors, type SemanticColors } from './semantic.js';
 import { assertPublicUrl, UnsafeUrlError } from './ssrf.js';
-import { isLight } from './color.js';
+import { isLight, nearestColor } from './color.js';
 
 const MAX_STYLESHEETS = 6;
 
@@ -129,11 +129,24 @@ export async function extractDesign(rawUrl: string): Promise<DesignResult> {
 
   const semantic = extractSemanticColors(css);
 
+  // Reconcile the accent color: a site may declare several accent-named vars
+  // (haici.com has yellow/blue/sky). Pick the CSS candidate that actually shows
+  // up in the favicon/brand palette; fall back to the image's light-vibrant
+  // swatch, then to the first CSS candidate.
+  const iconPalette = Object.values(palette.palette).filter(
+    (c): c is string => typeof c === 'string',
+  );
+  const accent =
+    nearestColor(semantic.accentCandidates, iconPalette) ??
+    palette.palette.LightVibrant ??
+    semantic.accent ??
+    null;
+
   const tokens: DesignTokens = {
     ...semantic,
     // Prefer an explicit brand color; fall back to theme-color / image vibrant.
     primary: semantic.primary ?? palette.themeColor ?? palette.palette.Vibrant ?? null,
-    accent: semantic.accent ?? palette.palette.LightVibrant ?? null,
+    accent,
     themeColor: palette.themeColor,
     imageSource: palette.imageUsed,
     paletteSource: palette.source,
