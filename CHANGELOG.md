@@ -1,5 +1,13 @@
 # info-ant
 
+## 1.1.0
+
+### Minor Changes
+
+- Extract external image URLs from CSS background-image declarations.
+
+  Some sites render header wordmarks as elements with `background-image: url(https://...)` pointing to external URLs instead of inline SVGs. The logo parser now extracts these via the new `css-bg-img` source type, scoped to logo-named containers and homepage links to avoid false positives from hero/section backgrounds.
+
 ## 1.0.2
 
 ### Patch Changes
