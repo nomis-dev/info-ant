@@ -103,6 +103,29 @@ test('parseHtmlLogos extracts SVG from a CSS background-image (Framer-style)', (
   assert.equal(logos[0].source, 'css-bg-svg');
 });
 
+test('parseHtmlLogos extracts an external image URL from a CSS background-image', () => {
+  // Next/Framer builders render the header wordmark as a <span> whose brand mark
+  // lives at a URL (not inline). The empty-alt hero <img> in the same header must
+  // lose to the real logo inside the homepage link (regression: fypro.ai).
+  const html = `
+    <nav>
+      <a class="brand" aria-label="acme home" href="/">
+        <span aria-hidden="true"
+          style="background-image:url(https://cdn.acme.com/_next/static/media/logowithbrand.abc123.svg)"></span>
+      </a>
+    </nav>
+    <header id="home" style="background:linear-gradient(98deg, #FFF 7%, #FFF 47%)">
+      <img alt="" class="object-cover" src="https://cdn.acme.com/static/p1_bg.webp" />
+    </header>`;
+  const { logos } = parseHtmlLogos(html, 'https://www.acme.com/');
+  const bg = logos.find((l) => l.source === 'css-bg-img');
+  assert.ok(bg, 'css background external-image logo should be found');
+  assert.equal(bg!.url, 'https://cdn.acme.com/_next/static/media/logowithbrand.abc123.svg');
+  assert.equal(bg!.homeLink, true, 'sits inside the homepage link');
+  // The home-linked logo must win over the empty-alt hero image.
+  assert.equal(logos[0].source, 'css-bg-img');
+});
+
 test('parseHtmlLogos ranks an on-brand inline svg above a customer <img>', () => {
   const html = `
     <header>

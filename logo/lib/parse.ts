@@ -36,7 +36,8 @@ export type LogoSource =
   | 'header-img' // <img> inside <header> / nav / .logo containers
   | 'svg-logo' // linked SVG (<a class="logo" href="logo.svg">)
   | 'inline-svg' // inline <svg> markup inside a logo container
-  | 'css-bg-svg' // SVG in a CSS background-image: url(data:…) (e.g. Framer)
+  | 'css-bg-svg' // inline SVG in a CSS background-image: url(data:…) (e.g. Framer)
+  | 'css-bg-img' // external image URL in a CSS background-image: url(https://…)
   | 'default-favicon'; // synthesized /favicon.ico fallback
 
 export type ParsedLogos = {
@@ -140,6 +141,18 @@ function svgFromCssBackground(style: string): { url: string; svg: string } | nul
   if (!/<svg[\s>]/i.test(svg)) return null;
   const normalized = svgToDataUri(svg);
   return normalized ? { url: normalized, svg: svg.trim() } : null;
+}
+
+// Pull an *external* image URL out of a `background-image: url(…)` (or the
+// `background:` shorthand) and absolutize it. Handles single/double/no quotes.
+// Skips data: URIs — those belong to svgFromCssBackground. Returns an absolute
+// URL or null. Some builders (Next, Framer) render the header wordmark this way:
+// a <span style="background-image:url(https://…/logo.svg)"> inside the home link.
+function urlFromCssBackground(style: string, baseUrl: string): string | null {
+  const m = style.match(/background(?:-image)?\s*:[^;]*?url\(\s*(['"]?)([^'")]+)\1\s*\)/i);
+  const raw = m?.[2]?.trim();
+  if (!raw || raw.startsWith('data:')) return null;
+  return absolutize(raw, baseUrl);
 }
 
 /**
@@ -263,6 +276,24 @@ export function parseHtmlLogos(html: string, baseUrl: string): ParsedLogos {
     pushLogo({ url: found.url, kind: 'logo', source: 'css-bg-svg', alt: alt || undefined, svg: found.svg, homeLink: insideHomeLink($el, baseUrl) });
   });
 
+  // CSS-background *external* image logos: same idea as css-bg-svg, but the
+  // graphic lives at a URL (background-image: url(https://…/logo.svg)) instead
+  // of inline. Hero/section backgrounds use this trick too, so scope strictly to
+  // logo-named containers and the homepage link — never a bare <header>/<nav>,
+  // which routinely carry full-bleed background images.
+  $(
+    '[class*="logo" i] [style*="background" i], [id*="logo" i] [style*="background" i], ' +
+      '[data-framer-name*="logo" i] [style*="background" i], ' +
+      'a[href="/"] [style*="background" i], a[href="./"] [style*="background" i], ' +
+      'a[aria-label*="home" i] [style*="background" i]',
+  ).each((_, el) => {
+    const $el = $(el);
+    const found = urlFromCssBackground($el.attr('style') ?? '', baseUrl);
+    if (!found) return;
+    const alt = $el.attr('aria-label') ?? $el.closest('a').attr('aria-label') ?? undefined;
+    pushLogo({ url: found, kind: 'logo', source: 'css-bg-img', alt: alt || undefined, homeLink: insideHomeLink($el, baseUrl) });
+  });
+
   // og:image is a decent last-resort brand image on many marketing pages.
   const ogImage = absolutize($('meta[property="og:image"]').attr('content'), baseUrl);
   if (ogImage) {
@@ -323,6 +354,7 @@ export function rankLogos(logos: LogoCandidate[], baseUrl: string): LogoCandidat
     if (isDataUriLogo) score += 400; // real header mark, crisp + scalable
     if (/\.svg(\?|#|$)/i.test(c.url)) score += 100; // crisp, scalable
     if (c.source === 'header-img') score += 50;
+    if (c.source === 'css-bg-img') score += 50; // external URL brand mark in a CSS bg
     if (c.source === 'og-image') score -= 500; // social card, last resort
     return score;
   };
